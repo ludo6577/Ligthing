@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,30 +21,60 @@ public class Scenario
 public class SceneManagement : MonoBehaviour
 {
     public Transform LightSelection;
+    public Transform GroupSelection;
     public Transform SceneSelection;
 
-    public List<Button> LightsButtons;
-    //public List<Light> Lights;
+    public List<Button> GroupButtons;
 
-    public List<LightsGroups> Groups;
+    public List<LightScript> Lights;
     public List<Scenario> Scenarios;
 
+    private LightsGroups[] Groups;
     private int currentLightIndex;
+    private int currentGroupIndex;
     private int currentSceneIndex;
 
-    public void LightClicked(int index)
+    // 1) We assign all lights to a choosen group (the light is flickering)
+    public void LightGroupSelectClicked(int index)
     {
-        currentLightIndex = index;
+        Groups[index - 1].Lights.Add(Lights[currentLightIndex]);
+        FlashNextLight();
+
+        if (Lights.Count == 0)
+        { 
+            LightSelection.gameObject.SetActive(false);
+            GroupSelection.gameObject.SetActive(true);
+        }
+    }
+
+    private void FlashNextLight()
+    {
+        var light = Lights[currentLightIndex];
+        light.Flash(false);
+        Lights.Remove(light);
+
+        if (Lights.Count > 0)
+        {
+            currentLightIndex = UnityEngine.Random.Range(0, Lights.Count);
+            Lights[currentLightIndex].Flash(true);
+        }
+    }
+
+    // 2) We choose a group
+    public void GroupClicked(int index)
+    {
+        currentGroupIndex = index;
 
         invertScene();
     }
 
+    // 3) Assign a scene to the previously selected group
     public void SceneClicked(int index)
     {
         currentSceneIndex = index;
 
-        var lightButton = LightsButtons[currentLightIndex - 1];
-        var lights = Groups[currentLightIndex - 1].Lights;
+        var lightButton = GroupButtons[currentGroupIndex - 1];
+        var lights = Groups[currentGroupIndex - 1].Lights;
         var scenario = Scenarios[currentSceneIndex - 1];
 
         lightButton.GetComponent<Image>().color = new Color(scenario.LightsColor.r, scenario.LightsColor.g, scenario.LightsColor.b, 0.25f);
@@ -58,9 +87,7 @@ public class SceneManagement : MonoBehaviour
 
         invertScene();
     }
-
-
-
+    
     private void invertScene()
     {
         var ligthActive = LightSelection.gameObject.activeSelf;
@@ -69,22 +96,26 @@ public class SceneManagement : MonoBehaviour
     }
 
 
-    // Use this for initialization
+    
     void Start () {
+        Groups = new LightsGroups[4];
+        for(var i=0; i<Groups.Length; i++)
+        {
+            Groups[i] = new LightsGroups();
+        }
+
         LightSelection.gameObject.SetActive(true);
+        GroupSelection.gameObject.SetActive(false);
         SceneSelection.gameObject.SetActive(false);
-        foreach (var light in LightsButtons)
+
+        foreach (var light in GroupButtons)
         {
             light.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.25f);
         }
 
-        if (Display.displays.Length > 1)
-            Display.displays[1].Activate();
-        if (Display.displays.Length > 2)
-            Display.displays[2].Activate(478, 718, 60); //2D
+        Lights[0].Flash(true);
     }
 	
-	// Update is called once per frame
 	void Update () {
         if (Input.GetKey(KeyCode.Escape))
             Application.Quit();

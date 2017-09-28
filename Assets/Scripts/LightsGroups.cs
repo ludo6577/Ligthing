@@ -10,5 +10,8 @@ public class LightsGroups
     [SerializeField]
     public List<LightScript> Lights;
 
-
+    public LightsGroups()
+    {
+        Lights = new List<LightScript>();
+    }
 }
